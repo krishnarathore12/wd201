@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-container {
+            margin-bottom: 30px;
+        }
+        .entries-container {
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+        input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .checkbox-container input {
+            width: auto;
+            margin-right: 10px;
+        }
+        .submit-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .error {
+            color: red;
+            font-size: 12px;
+        }
+        .success-message {
+            background-color: #dff0d8;
+            color: #3c763d;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .password-strength {
+            margin-top: 5px;
+            height: 5px;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .weak {
+            width: 30%;
+            background-color: #ff4d4d;
+        }
+        .medium {
+            width: 60%;
+            background-color: #ffd633;
+        }
+        .strong {
+            width: 100%;
+            background-color: #66cc66;
+        }
+    </style>
+</head>
+<body>
+    <h1>Registration Form</h1>
+    
+    <div class="form-container">
+        <div id="successMessage" class="success-message">
+            Registration successful! Your information has been saved.
+        </div>
+        <form id="registrationForm">
+            <div>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+                <div id="passwordStrength" class="password-strength"></div>
+                <div id="passwordError" class="error"></div>
+            </div>
+            
+            <div>
+                <label for="dob">Date of Birth:</label>
+                <input type="date" id="dob" name="dob" required>
+                <div id="dobError" class="error"></div>
+            </div>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="acceptTerms" name="acceptTerms" required>
+                <label for="acceptTerms">I accept the terms and conditions</label>
+            </div>
+            
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+    </div>
+    
+    <div class="entries-container">
+        <h2>Entries</h2>
+        <table id="entriesTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Password</th>
+                    <th>Dob</th>
+                    <th>Accepted terms?</th>
+                </tr>
+            </thead>
+            <tbody id="entriesTableBody"></tbody>
+        </table>
+    </div>
+
+    <a href="/">&lt;- Back to home</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const registrationForm = document.getElementById('registrationForm');
+            const entriesTableBody = document.getElementById('entriesTableBody');
+            const dobInput = document.getElementById('dob');
+            const passwordInput = document.getElementById('password');
+            const dobError = document.getElementById('dobError');
+            const passwordError = document.getElementById('passwordError');
+            
+            // Load entries from localStorage
+            displayEntries();
+            
+            // Add real-time dob validation
+            dobInput.addEventListener('input', function() {
+                const dob = new Date(dobInput.value);
+                const age = calculateAge(dob);
+                
+                if (isNaN(age)) {
+                    dobError.textContent = 'Please enter a valid date';
+                } else if (age < 18 || age > 55) {
+                    dobError.textContent = 'Age must be between 18 and 55 years';
+                } else {
+                    dobError.textContent = '';
+                }
+            });
+            
+            // Add real-time password validation
+            passwordInput.addEventListener('input', function() {
+                const password = passwordInput.value;
+                const hasUpperCase = /[A-Z]/.test(password);
+                const hasLowerCase = /[a-z]/.test(password);
+                const hasNumbers = /\d/.test(password);
+                const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+                const passwordStrength = document.getElementById('passwordStrength');
+                
+                // Calculate password strength
+                let strength = 0;
+                if (password.length >= 6) strength += 1;
+                if (password.length >= 10) strength += 1;
+                if (hasUpperCase) strength += 1;
+                if (hasLowerCase) strength += 1;
+                if (hasNumbers) strength += 1;
+                if (hasSpecialChar) strength += 1;
+                
+                // Update password strength indicator
+                passwordStrength.className = 'password-strength';
+                if (password.length === 0) {
+                    passwordStrength.className = 'password-strength';
+                } else if (strength < 3) {
+                    passwordStrength.className += ' weak';
+                } else if (strength < 5) {
+                    passwordStrength.className += ' medium';
+                } else {
+                    passwordStrength.className += ' strong';
+                }
+                
+                if (password.length < 6) {
+                    passwordError.textContent = 'Password must be at least 6 characters long';
+                } else if (!(hasUpperCase && hasLowerCase && hasNumbers)) {
+                    passwordError.textContent = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+                } else {
+                    passwordError.textContent = '';
+                }
+            });
+            
+            registrationForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                // Validate date of birth
+                const dob = new Date(dobInput.value);
+                const now = new Date();
+                const age = calculateAge(dob);
+                
+                if (age < 18 || age > 55) {
+                    dobError.textContent = 'Age must be between 18 and 55 years';
+                    return;
+                } else {
+                    dobError.textContent = '';
+                }
+                
+                // Validate password
+                const password = passwordInput.value;
+                // Check password length and complexity
+                const hasUpperCase = /[A-Z]/.test(password);
+                const hasLowerCase = /[a-z]/.test(password);
+                const hasNumbers = /\d/.test(password);
+                const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+                
+                if (password.length < 6) {
+                    passwordError.textContent = 'Password must be at least 6 characters long';
+                    return;
+                } else if (!(hasUpperCase && hasLowerCase && hasNumbers)) {
+                    passwordError.textContent = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+                    return;
+                } else {
+                    passwordError.textContent = '';
+                }
+                
+                // Save the entry
+                const formData = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    password: password,
+                    dob: document.getElementById('dob').value,
+                    acceptedTerms: document.getElementById('acceptTerms').checked
+                };
+                
+                saveEntry(formData);
+                displayEntries();
+                registrationForm.reset();
+                
+                // Show success message
+                const successMessage = document.getElementById('successMessage');
+                successMessage.style.display = 'block';
+                
+                // Hide success message after 3 seconds
+                setTimeout(function() {
+                    successMessage.style.display = 'none';
+                }, 3000);
+            });
+            
+            function calculateAge(dob) {
+                const now = new Date();
+                const birthDate = new Date(dob);
+                let age = now.getFullYear() - birthDate.getFullYear();
+                const monthDiff = now.getMonth() - birthDate.getMonth();
+                
+                if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+                
+                return age;
+            }
+            
+            function saveEntry(entry) {
+                let entries = getEntriesFromStorage();
+                entries.push(entry);
+                localStorage.setItem('registrationEntries', JSON.stringify(entries));
+            }
+            
+            function getEntriesFromStorage() {
+                return JSON.parse(localStorage.getItem('registrationEntries') || '[]');
+            }
+            
+            function displayEntries() {
+                const entries = getEntriesFromStorage();
+                entriesTableBody.innerHTML = '';
+                
+                entries.forEach(entry => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${entry.name}</td>
+                        <td>${entry.email}</td>
+                        <td>${entry.password}</td>
+                        <td>${entry.dob}</td>
+                        <td>${entry.acceptedTerms ? 'Yes' : 'No'}</td>
+                    `;
+                    entriesTableBody.appendChild(row);
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
